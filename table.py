@@ -37,8 +37,8 @@ class Table:
         self.query = f"INSERT INTO {self.name} ({queryKeys}) VALUES ({queryValues})"
         return self
 
-    def where(self, **conditions: str) -> "Table":
-        self.whereQuery = "WHERE " + " AND ".join(
+    def where(self, operator="AND", **conditions: str) -> "Table":
+        self.whereQuery = "WHERE " + (f" {operator} ").join(
             [f"{key} = '{value}'" for key, value in conditions.items()]
         )
         return self
