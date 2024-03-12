@@ -1,4 +1,5 @@
 import sqlite3
+import threading
 
 
 class Database:
@@ -19,24 +20,29 @@ class Database:
 
         self.connection = sqlite3.connect(databasePath, check_same_thread=False)
         self.cursor = self.connection.cursor()
+        self.lock = threading.Lock()
 
     def execute(self, *queris: str) -> None:
-        for query in queris:
-            self.cursor.execute(query)
-
-        self.connection.commit()
+        with self.lock:
+            for query in queris:
+                self.cursor.execute(query)
+            
+            self.connection.commit()
 
     def fetch(self, query: str) -> list[tuple]:
-        self.cursor.execute(query)
-        return self.cursor.fetchall()
+        with self.lock:
+            self.cursor.execute(query)
+            return self.cursor.fetchall()
 
     def fetchOne(self, query: str) -> tuple:
-        self.cursor.execute(query)
-        return self.cursor.fetchone()
+        with self.lock:
+            self.cursor.execute(query)
+            return self.cursor.fetchone()
 
     def fetchMany(self, query: str, size: int | None = None) -> list[tuple]:
-        self.cursor.execute(query)
-        return self.cursor.fetchmany(size)
+        with self.lock:
+            self.cursor.execute(query)
+            return self.cursor.fetchmany(size)
 
     def close(self):
         self.connection.close()
