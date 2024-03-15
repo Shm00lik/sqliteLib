@@ -14,6 +14,7 @@ class Table:
         self.name = name
 
         self.query = ""
+        self.params = ()
         self.whereQuery = ""
         self.orderQuery = ""
         self.limitQuery = ""
@@ -22,6 +23,12 @@ class Table:
     def getTable(name: str):
         return Table(name)
 
+    def getName(self):
+        return self.name
+    
+    def getColumns(self):
+        return Database.getInstance().fetch.fetch(f"SELECT name FROM PRAGMA_TABLE_INFO('{table.getName()}')")
+    
     def create(self, *columns: str) -> "Table":
         self.query = f"CREATE TABLE IF NOT EXISTS {self.name} ({', '.join(columns)})"
         return self
@@ -32,15 +39,20 @@ class Table:
 
     def insert(self, **values: str) -> "Table":
         queryKeys = ", ".join(values.keys())
-        queryValues = ", ".join([f"'{value}'" for value in values.values()])
+        queryValues = ", ".join(["?" for value in values.values()])
+
+        self.params = tuple(values.values())
 
         self.query = f"INSERT INTO {self.name} ({queryKeys}) VALUES ({queryValues})"
         return self
 
     def where(self, operator="AND", **conditions: str) -> "Table":
         self.whereQuery = "WHERE " + (f" {operator} ").join(
-            [f"{key} = '{value}'" for key, value in conditions.items()]
+            [f"{key} = ?" for key in conditions.keys()]
         )
+
+        self.params = tuple(conditions.values())
+
         return self
 
     def order(self, column: str, order: str) -> "Table":
@@ -58,17 +70,17 @@ class Table:
     ) -> list[tuple] | tuple | None:
         self.query = self.buildQuery()
 
-        self.reset()
-
         match fetchType:
             case FetchType.NONE:
-                return Database.getInstance().execute(self.query)
+                return Database.getInstance().execute(self.query, self.params)
             case FetchType.ALL:
-                return Database.getInstance().fetch(self.query)
+                return Database.getInstance().fetch(self.query, self.params)
             case FetchType.ONE:
-                return Database.getInstance().fetchOne(self.query)
+                return Database.getInstance().fetchOne(self.query, self.params)
             case FetchType.MANY:
                 return Database.getInstance().fetchMany(self.query, fetchSize)
+
+        self.reset()
 
     def buildQuery(self) -> str:
         return (
@@ -82,6 +94,8 @@ class Table:
         )
 
     def reset(self) -> None:
+        self.query = ""
+        self.params = ()
         self.whereQuery = ""
         self.orderQuery = ""
         self.limitQuery = ""

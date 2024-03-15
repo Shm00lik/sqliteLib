@@ -22,27 +22,26 @@ class Database:
         self.cursor = self.connection.cursor()
         self.lock = threading.Lock()
 
-    def execute(self, *queris: str) -> None:
+    def execute(self, query: str, params: tuple = ()) -> None:
         with self.lock:
-            for query in queris:
-                self.cursor.execute(query)
-            
+            self.cursor.execute(query, params)
             self.connection.commit()
 
-    def fetch(self, query: str) -> list[tuple]:
+    def fetch(self, query: str, params: tuple = ()) -> list[tuple]:
         with self.lock:
-            self.cursor.execute(query)
+            self.cursor.execute(query, params)
             return self.cursor.fetchall()
 
-    def fetchOne(self, query: str) -> tuple:
+    def fetchOne(self, query: str, params: tuple = ()) -> tuple:
         with self.lock:
-            self.cursor.execute(query)
+            print(query)
+            self.cursor.execute(query, params)
             return self.cursor.fetchone()
 
-    def fetchMany(self, query: str, size: int | None = None) -> list[tuple]:
+    def fetchMany(self, query: str, params: tuple = (), size: int | None = None) -> list[tuple]:
         with self.lock:
-            self.cursor.execute(query)
+            self.cursor.execute(query, params)
             return self.cursor.fetchmany(size)
-
+        
     def close(self):
         self.connection.close()
