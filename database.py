@@ -19,26 +19,28 @@ class Database:
             Database.__instance = self
 
         self.connection = sqlite3.connect(databasePath, check_same_thread=False)
+        self.connection.row_factory = sqlite3.Row
         self.cursor = self.connection.cursor()
         self.lock = threading.Lock()
 
     def execute(self, query: str, params: tuple = ()) -> None:
         with self.lock:
+            print(query)
+            print(params)
             self.cursor.execute(query, params)
             self.connection.commit()
 
-    def fetch(self, query: str, params: tuple = ()) -> list[tuple]:
+    def fetch(self, query: str, params: tuple = ()) -> sqlite3.Row:
         with self.lock:
             self.cursor.execute(query, params)
             return self.cursor.fetchall()
 
-    def fetchOne(self, query: str, params: tuple = ()) -> tuple:
+    def fetchOne(self, query: str, params: tuple = ()) -> sqlite3.Row:
         with self.lock:
-            print(query)
             self.cursor.execute(query, params)
             return self.cursor.fetchone()
 
-    def fetchMany(self, query: str, params: tuple = (), size: int | None = None) -> list[tuple]:
+    def fetchMany(self, query: str, params: tuple = (), size: int | None = None) -> sqlite3.Row:
         with self.lock:
             self.cursor.execute(query, params)
             return self.cursor.fetchmany(size)

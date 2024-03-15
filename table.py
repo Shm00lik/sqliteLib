@@ -1,5 +1,6 @@
 from enum import Enum
 from .database import Database
+import sqlite3
 
 
 class FetchType(Enum):
@@ -27,7 +28,7 @@ class Table:
         return self.name
     
     def getColumns(self):
-        return Database.getInstance().fetch.fetch(f"SELECT name FROM PRAGMA_TABLE_INFO('{table.getName()}')")
+        return Database.getInstance().fetch.fetch(f"SELECT name FROM PRAGMA_TABLE_INFO('{self.name}')")
     
     def create(self, *columns: str) -> "Table":
         self.query = f"CREATE TABLE IF NOT EXISTS {self.name} ({', '.join(columns)})"
@@ -44,6 +45,10 @@ class Table:
         self.params = tuple(values.values())
 
         self.query = f"INSERT INTO {self.name} ({queryKeys}) VALUES ({queryValues})"
+        return self
+    
+    def delete(self) -> "Table":
+        self.query = f"DELETE FROM {self.name}"
         return self
 
     def where(self, operator="AND", **conditions: str) -> "Table":
@@ -67,20 +72,24 @@ class Table:
         self,
         fetchType: FetchType = FetchType.NONE,
         fetchSize: int | None = None,
-    ) -> list[tuple] | tuple | None:
+    ) -> None | sqlite3.Row:
         self.query = self.buildQuery()
+
+        result = None
 
         match fetchType:
             case FetchType.NONE:
-                return Database.getInstance().execute(self.query, self.params)
+                result = Database.getInstance().execute(self.query, self.params)
             case FetchType.ALL:
-                return Database.getInstance().fetch(self.query, self.params)
+                result = Database.getInstance().fetch(self.query, self.params)
             case FetchType.ONE:
-                return Database.getInstance().fetchOne(self.query, self.params)
+                result = Database.getInstance().fetchOne(self.query, self.params)
             case FetchType.MANY:
-                return Database.getInstance().fetchMany(self.query, fetchSize)
+                result = Database.getInstance().fetchMany(self.query, fetchSize)
 
         self.reset()
+
+        return result
 
     def buildQuery(self) -> str:
         return (
