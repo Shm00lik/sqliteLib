@@ -31,9 +31,9 @@ class Database:
             self.connection.commit()
 
     def fetch(self, query: str, params: tuple = ()) -> sqlite3.Row:
-        with self.lock:
-            self.cursor.execute(query, params)
-            return self.cursor.fetchall()
+        # with self.lock:
+        self.cursor.execute(query, params)
+        return self.cursor.fetchall()
 
     def fetchOne(self, query: str, params: tuple = ()) -> sqlite3.Row:
         with self.lock:
