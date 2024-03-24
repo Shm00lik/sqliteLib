@@ -26,10 +26,12 @@ class Table:
 
     def getName(self):
         return self.name
-    
+
     def getColumns(self):
-        return Database.getInstance().fetch.fetch(f"SELECT name FROM PRAGMA_TABLE_INFO('{self.name}')")
-    
+        return Database.getInstance().fetch.fetch(
+            f"SELECT name FROM PRAGMA_TABLE_INFO('{self.name}')"
+        )
+
     def create(self, *columns: str) -> "Table":
         self.query = f"CREATE TABLE IF NOT EXISTS {self.name} ({', '.join(columns)})"
         return self
@@ -46,7 +48,7 @@ class Table:
 
         self.query = f"INSERT INTO {self.name} ({queryKeys}) VALUES ({queryValues})"
         return self
-    
+
     def delete(self) -> "Table":
         self.query = f"DELETE FROM {self.name}"
         return self
@@ -72,7 +74,7 @@ class Table:
         self,
         fetchType: FetchType = FetchType.NONE,
         fetchSize: int | None = None,
-    ) -> None | sqlite3.Row:
+    ) -> None | sqlite3.Row | list[sqlite3.Row]:
         self.query = self.buildQuery()
 
         result = None
@@ -85,7 +87,9 @@ class Table:
             case FetchType.ONE:
                 result = Database.getInstance().fetchOne(self.query, self.params)
             case FetchType.MANY:
-                result = Database.getInstance().fetchMany(self.query, fetchSize)
+                result = Database.getInstance().fetchMany(
+                    self.query, self.params, fetchSize
+                )
 
         self.reset()
 
